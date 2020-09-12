@@ -1,5 +1,5 @@
-from data.downloader import download_cifar10
-from data.processing import transformations, data_loader
+from dataset.download import download_cifar10
+from dataset.prep import transformations, data_loader
 
 
 def cifar10_classes():

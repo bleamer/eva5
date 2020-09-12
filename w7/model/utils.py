@@ -1,10 +1,11 @@
+import torch
 import torch.nn as nn
 import torch.optim as optim
 
 from torch.optim.lr_scheduler import StepLR
 from torchsummary import summary
 
-from model.network import Net
+from model.cnn import Net
 
 
 def cross_entropy_loss():
@@ -53,3 +54,31 @@ def model_summary(model, input_size):
     """
 
     print(summary(model, input_size=input_size))
+
+def set_seed(seed, cuda):
+    """ Setting the seed makes the results reproducible. """
+    torch.manual_seed(seed)
+    if cuda:
+        torch.cuda.manual_seed(seed)
+
+def cuda_init(rand):
+    cuda = torch.cuda.is_available() # 
+    set_seed(rand, cuda) # Set random state
+    dev = torch.device("cuda" if cuda else "cpu")
+    return cuda, dev
+
+
+def initialize_cuda(seed):
+    """ Check if GPU is availabe and set seed. """
+
+    # Check CUDA availability
+    cuda = torch.cuda.is_available()
+    print('GPU Available?', cuda)
+
+    # Initialize seed
+    set_seed(seed, cuda)
+
+    # Set device
+    device = torch.device("cuda" if cuda else "cpu")
+
+    return cuda, device
