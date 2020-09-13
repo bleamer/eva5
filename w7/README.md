@@ -6,9 +6,9 @@ This notebook implements CIFAR10 classification CNN using PyTorch
 ----
 | Attribute | Value |
 |:--- | :--- |
-| Test Accuracy | 80.28 |
+| Test Accuracy | 82.92 |
 | Trained Parameter count   |94218 |
-| Dropout | 0.2 |
+| Dropout | 0.1 |
 | Total Epochs | 40 |
 
 ----
