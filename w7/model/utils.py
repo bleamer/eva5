@@ -67,18 +67,3 @@ def cuda_init(rand):
     dev = torch.device("cuda" if cuda else "cpu")
     return cuda, dev
 
-
-def initialize_cuda(seed):
-    """ Check if GPU is availabe and set seed. """
-
-    # Check CUDA availability
-    cuda = torch.cuda.is_available()
-    print('GPU Available?', cuda)
-
-    # Initialize seed
-    set_seed(seed, cuda)
-
-    # Set device
-    device = torch.device("cuda" if cuda else "cpu")
-
-    return cuda, device
