@@ -9,7 +9,7 @@ def cifar10_classes():
     )
 
 
-def cifar10_dataset(batch_size, cuda, num_workers, train=True, augmentation=False, rotation=0.0):
+def cifar10_dataset(batch_size, cuda, num_workers, train=True, transforms=None):
     """Download and create dataset.
     Args:
         batch_size: Number of images to considered in each batch.
@@ -28,9 +28,8 @@ def cifar10_dataset(batch_size, cuda, num_workers, train=True, augmentation=Fals
 
     # Define data transformations
     if train:
-        transforms = transformations(
-            augmentation, rotation
-        )
+        if transforms:
+            transforms = transforms
     else:
         transforms = transformations()
 

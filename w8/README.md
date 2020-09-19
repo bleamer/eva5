@@ -8,7 +8,7 @@ The results with using ResNet18 architecture with (2,2,2,2)
 ----
 | Attribute | Value |
 |:--- | :--- |
-| Test Accuracy | 80.64 |
+| Test Accuracy | 63.12 |
 | Trained Parameter count   |11173962 |
 | Dropout | 0.1 |
 | Total Epochs | 12 |
@@ -19,13 +19,11 @@ The results with using ResNet18 architecture with (2,2,2,2)
 
 The model uses:
 * 3x3 Convolution
-* 1x1 / Pointwise Convolution
-* Dilated / Atrous Convolution
-* Depthwise Separable Convolution
+* Batch Normalization
 * Max Pooling
+* 4 X Residual networks of size 2 
 
 To run 
-
 
 You can install dependencies using  
 `$ pip install -r req.txt`
