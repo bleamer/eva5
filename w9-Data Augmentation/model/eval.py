@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 
 
-def val(model, loader, device, criterion, losses, accuracies, incorrect_samples):
+def val(model, loader, device, criterion, losses, accuracies, correct_samples, incorrect_samples, sample_count=25, epoch=0, TotalEpochs=0):
     """Train the model.
     Args:
         model: Model instance.
@@ -11,7 +11,10 @@ def val(model, loader, device, criterion, losses, accuracies, incorrect_samples)
         criterion: Loss function.
         losses: List containing the change in loss.
         accuracies: List containing the change in accuracy.
+        correct_samples: List containing correctly predicted samples.
         incorrect_samples: List containing incorrectly predicted samples.
+        sample_count: Total number of predictions to store from each correct
+            and incorrect samples.
     """
 
     model.eval()
@@ -26,11 +29,17 @@ def val(model, loader, device, criterion, losses, accuracies, incorrect_samples)
             pred = output.argmax(dim=1, keepdim=True)  # Get the index of the max log-probability
             result = pred.eq(target.view_as(pred))
 
-            # Save incorrect samples
-            if len(incorrect_samples) < 25:
-                for i in range(loader.batch_size):
-                    if not list(result)[i]:
+            # Save correct and incorrect samples
+            if epoch == TotalEpochs:
+                for i in range(len(list(result))):
+                    if not list(result)[i] and len(incorrect_samples) < sample_count:
                         incorrect_samples.append({
+                            'prediction': list(pred)[i],
+                            'label': list(target.view_as(pred))[i],
+                            'image': img_batch[i]
+                        })
+                    elif list(result)[i] and len(correct_samples) < sample_count:
+                        correct_samples.append({
                             'prediction': list(pred)[i],
                             'label': list(target.view_as(pred))[i],
                             'image': img_batch[i]

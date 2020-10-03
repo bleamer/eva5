@@ -3,13 +3,22 @@ from dataset.prep import data_loader, Transformations
 import numpy as np
 
 class DS_Cifar10:
+  '''
+  Class for getting Cifar10  dataset
+  '''
+
   def __init__(self, **kwargs):
     self.classes = (
         'plane', 'car', 'bird', 'cat', 'deer',
         'dog', 'frog', 'horse', 'ship', 'truck'
     )
+
+    self.train_transform = None
+    self.raw_data = self._getData(**kwargs)
+
     self.train_transform = self._transform(**kwargs)
     self.train_data = self._getData(**kwargs)
+
 
     self.test_transform = self._transform(train=False, **kwargs)
     self.test_data = self._getData(train=False, **kwargs)
@@ -40,11 +49,19 @@ class DS_Cifar10:
   
   def data(self, train = True):
     data = self.train_data if train else self.test_data
-    return data, targets
+    return data.data, data.targets
 
   @property
   def image_size(self):
     return np.transpose(self.train_data.data[0], (2, 0, 1)).shape
+
+  @property
+  def mean(self):
+      return tuple(np.mean(self.raw_data.data, axis=(0, 1, 2)) / 255)
+
+  @property
+  def std(self):
+      return tuple(np.std(self.raw_data.data, axis=(0, 1, 2)) / 255)
 
 # def cifar10_dataset(batch_size, cuda, num_workers, train=True, transforms=None):
 #     """Download and create dataset.
