@@ -35,8 +35,8 @@ You can install dependencies using
 
 ###Grad CAM Images
 
-####Correct Images </br> ![](Correct_grad_cam_1.png)![](Correct_grad_cam_2.png)![](Correct_grad_cam_3.png)![](Correct_grad_cam_4.png)
+#### Correct Images </br> ![](output/Correct_grad_cam_1.png)![](output/Correct_grad_cam_2.png)![](output/Correct_grad_cam_3.png)![](output/Correct_grad_cam_4.png)
 
 -----
 
-####Incorrect Images </br> ![](Incorrect_grad_cam_1.png)![](Incorrect_grad_cam_2.png)![](Incorrect_grad_cam_3.png)![](Incorrect_grad_cam_4.png) </br> ![](Incorrect_grad_cam_5.png)![](Incorrect_grad_cam_6.png)![](Incorrect_grad_cam_7.png)![](Incorrect_grad_cam_8.png)
+#### Incorrect Images </br> ![](output/Incorrect_grad_cam_1.png)![](output/Incorrect_grad_cam_2.png)![](output/Incorrect_grad_cam_3.png)![](output/Incorrect_grad_cam_4.png) </br> ![](output/Incorrect_grad_cam_5.png)![](output/Incorrect_grad_cam_6.png)![](output/Incorrect_grad_cam_7.png)![](output/Incorrect_grad_cam_8.png)
