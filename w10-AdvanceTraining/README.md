@@ -14,11 +14,11 @@ The results with using ResNet18 architecture with (2,2,2,2), that is, 4 residual
 ----
 | Attribute | Value |
 |:--- | :--- |
-| Train Accuracy | 47.044 |
-| Test Accuracy | 50.73 |
+| Train Accuracy | 98.902 |
+| Test Accuracy | 84.36 |
 | Trained Parameter count   |11173962 |
 | Dropout | 0.1 |
-| Total Epochs | 2 |
+| Total Epochs | 50 |
 | Batch Size | 64|
 | LR using LRFinder | 0.1284|
 
