@@ -58,7 +58,7 @@ class CyclicLR:
         # Plot margins and save plot
         plt.margins(y=0.2)
         plt.tight_layout()
-        plt.plot()
-        plt.show()
         if save and path:
             plt.savefig(path)
+        plt.plot()
+        plt.show()
