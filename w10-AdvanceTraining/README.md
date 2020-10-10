@@ -42,5 +42,5 @@ You can install dependencies using
 ### Grad CAM Images
 
 
-![](output/failediamges.png)
+![](output/failedimages.png)
 
