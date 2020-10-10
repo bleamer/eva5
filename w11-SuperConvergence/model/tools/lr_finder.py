@@ -154,7 +154,7 @@ class LRFinder(object):
 
         self.model = model
         self.criterion = criterion
-        self.history = {"lr": [], "loss": []}
+        self.history = {"lr": [], "loss": [], 'accuracy': []}
         self.best_loss = None
         self.memory_cache = memory_cache
         self.cache_dir = cache_dir
@@ -264,8 +264,9 @@ class LRFinder(object):
         """
 
         # Reset test results
-        self.history = {"lr": [], "loss": []}
+        self.history = {"lr": [], "loss": [], "accuracy":[]}
         self.best_loss = None
+        self.best_accuracy = None
 
         # Move the model to the proper device
         self.model.to(self.device)
@@ -314,13 +315,13 @@ class LRFinder(object):
 
         for iteration in tqdm(range(num_iter)):
             # Train on batch and retrieve loss
-            loss = self._train_batch(
+            loss, accuracy = self._train_batch(
                 train_iter,
                 accumulation_steps,
                 non_blocking_transfer=non_blocking_transfer,
             )
             if val_loader:
-                loss = self._validate(
+                loss, accuracy = self._validate(
                     val_iter, non_blocking_transfer=non_blocking_transfer
                 )
 
@@ -331,14 +332,20 @@ class LRFinder(object):
             # Track the best loss and smooth it if smooth_f is specified
             if iteration == 0:
                 self.best_loss = loss
+                self.best_accuracy = accuracy
             else:
                 if smooth_f > 0:
                     loss = smooth_f * loss + (1 - smooth_f) * self.history["loss"][-1]
+                    accuracy = smooth_f * accuracy + (1 - smooth_f) * self.history["accuracy"][-1]
+
                 if loss < self.best_loss:
                     self.best_loss = loss
+                if accuracy > self.best_accuracy:
+                    self.best_accuracy = accuracy
 
             # Check if the loss has diverged; if it has, stop the test
             self.history["loss"].append(loss)
+            self.history["accuracy"].append(accuracy)
             if loss > diverge_th * self.best_loss:
                 print("Stopping early, the loss has diverged")
                 break
@@ -375,7 +382,10 @@ class LRFinder(object):
     def _train_batch(self, train_iter, accumulation_steps, non_blocking_transfer=True):
         self.model.train()
         total_loss = None  # for late initialization
+        batch_accuracy = None
 
+        batch_correct = 0
+        batch_processed = 0
         self.optimizer.zero_grad()
         for i in range(accumulation_steps):
             inputs, labels = next(train_iter)
@@ -386,6 +396,12 @@ class LRFinder(object):
             # Forward pass
             outputs = self.model(inputs)
             loss = self.criterion(outputs, labels)
+
+            # Accuracy
+            pred = outputs.argmax(dim=1, keepdim=True)
+            batch_correct += pred.eq(labels.view_as(pred)).sum().item()
+            batch_processed += len(inputs)
+
 
             # Loss should be averaged in each step
             loss /= accumulation_steps
@@ -408,9 +424,12 @@ class LRFinder(object):
             else:
                 total_loss += loss
 
+        if not batch_accuracy:
+            batch_accuracy = batch_correct / batch_processed * 100.
+
         self.optimizer.step()
 
-        return total_loss.item()
+        return total_loss.item(), batch_accuracy
 
     def _move_to_device(self, inputs, labels, non_blocking=True):
         def move(obj, device, non_blocking=True):
@@ -433,6 +452,9 @@ class LRFinder(object):
         # Set model to evaluation mode and disable gradient computation
         running_loss = 0
         self.model.eval()
+
+        batch_correct = 0
+        batch_processed = 0
         with torch.no_grad():
             for inputs, labels in val_iter:
                 # Move data to the correct device
@@ -445,7 +467,13 @@ class LRFinder(object):
                 loss = self.criterion(outputs, labels)
                 running_loss += loss.item() * len(labels)
 
-        return running_loss / len(val_iter.dataset)
+                # Accuracy
+                pred = outputs.argmax(dim=1, keepdim=True)
+                batch_correct += pred.eq(labels.view_as(pred)).sum().item()
+                batch_processed += len(inputs)
+        accuracy = (batch_correct / batch_processed) * 100.
+
+        return running_loss / len(val_iter.dataset), accuracy
 
     def plot(
         self,
@@ -544,6 +572,110 @@ class LRFinder(object):
 
         if suggest_lr and min_grad_idx:
             return ax, lrs[min_grad_idx]
+        else:
+            return ax
+
+
+    def plot_accuracy(
+        self,
+        skip_start=10,
+        skip_end=5,
+        log_lr=True,
+        show_lr=None,
+        ax=None,
+        suggest_lr=True,
+    ):
+        """Plots the learning rate range test vs Accuracy.
+
+        Arguments:
+            skip_start (int, optional): number of batches to trim from the start.
+                Default: 10.
+            skip_end (int, optional): number of batches to trim from the start.
+                Default: 5.
+            log_lr (bool, optional): True to plot the learning rate in a logarithmic
+                scale; otherwise, plotted in a linear scale. Default: True.
+            show_lr (float, optional): if set, adds a vertical line to visualize the
+                specified learning rate. Default: None.
+            ax (matplotlib.axes.Axes, optional): the plot is created in the specified
+                matplotlib axes object and the figure is not be shown. If `None`, then
+                the figure and axes object are created in this method and the figure is
+                shown . Default: None.
+            suggest_lr (bool, optional): suggest a learning rate by
+                - 'steepest': the point with steepest gradient (minimal gradient)
+                you can use that point as a first guess for an LR. Default: True.
+
+        Returns:
+            The matplotlib.axes.Axes object that contains the plot,
+            and the suggested learning rate (if set suggest_lr=True).
+        """
+
+        if skip_start < 0:
+            raise ValueError("skip_start cannot be negative")
+        if skip_end < 0:
+            raise ValueError("skip_end cannot be negative")
+        if show_lr is not None and not isinstance(show_lr, float):
+            raise ValueError("show_lr must be float")
+
+        # Get the data to plot from the history dictionary. Also, handle skip_end=0
+        # properly so the behaviour is the expected
+        lrs = self.history["lr"]
+        losses = self.history["loss"]
+        accuracies = self.history['accuracy']
+        if skip_end == 0:
+            lrs = lrs[skip_start:]
+            losses = losses[skip_start:]
+            accuracies = accuracies[skip_start:]
+        else:
+            lrs = lrs[skip_start:-skip_end]
+            losses = losses[skip_start:-skip_end]
+            accuracies = accuracies[skip_start:-skip_end]
+
+        # Create the figure and axes object if axes was not already given
+        fig = None
+        if ax is None:
+            fig, ax = plt.subplots()
+
+        # Plot loss as a function of the learning rate
+        ax.plot(lrs, accuracies)
+
+        # Plot the suggested LR
+        if suggest_lr:
+            # 'steepest': the point with steepest gradient (minimal gradient)
+            print("LR suggestion: steepest gradient")
+            max_acc_idx = None
+            try:
+                min_loss_idx = (np.gradient(np.array(losses))).argmin()
+            except ValueError:
+                print(
+                    "Failed to compute the gradients, there might not be enough points."
+                )
+            if max_acc_idx is not None:
+                print("Suggested LR: {:.2E}".format(lrs[min_loss_idx]))
+                ax.scatter(
+                    lrs[min_loss_idx],
+                    accuracies[min_loss_idx],
+                    s=75,
+                    marker="o",
+                    color="red",
+                    zorder=3,
+                    label="steepest gradient",
+                )
+                ax.legend()
+
+        if log_lr:
+            ax.set_xscale("log")
+        ax.set_xlabel("Learning rate")
+        ax.set_ylabel("Accuracy")
+
+        if show_lr is not None:
+            ax.axvline(x=show_lr, color="red")
+
+        # Show only if the figure was created internally
+        if fig is not None:
+            plt.show()
+
+        if suggest_lr and min_loss_idx:
+            return ax, lrs[min_loss_idx]
         else:
             return ax
 

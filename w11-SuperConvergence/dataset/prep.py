@@ -5,45 +5,60 @@ from albumentations.pytorch import ToTensor
 import numpy as np
 
 class Transformations:
-  def __init__(self, **kwargs):
+    def __init__(self, **kwargs):
 
-    self.transforms = []
-    h_flip = kwargs['h_flip'] if 'h_flip' in kwargs else 0.
-    v_flip = kwargs['v_flip'] if 'v_flip' in kwargs else 0.
-    g_blur = kwargs['g_blur'] if 'g_blur' in kwargs else 0.
-    rot = kwargs['rotation'] if 'rotation' in kwargs else 0.
-    cutout = kwargs['cutout'] if 'cutout' in kwargs else 0.
-    cutout_dimen = kwargs['cutout_dimen'] if 'cutout_dimen' in kwargs else (0,0)
-    cutout_wd = kwargs['cutout_wd'] if 'cutout_wd' in kwargs else 0.
-    mean = kwargs['mean'] if 'mean' in kwargs else (.5,.5,.5)
-    std = kwargs['std'] if 'std' in kwargs else (.5,.5,.5)
-    train = kwargs['train'] if 'train' in kwargs else True
+        self.transforms = []
+        h_flip = kwargs['h_flip'] if 'h_flip' in kwargs else 0.
+        v_flip = kwargs['v_flip'] if 'v_flip' in kwargs else 0.
+        g_blur = kwargs['g_blur'] if 'g_blur' in kwargs else 0.
+        rot = kwargs['rotation'] if 'rotation' in kwargs else 0.
+        cutout = kwargs['cutout'] if 'cutout' in kwargs else 0.
+        cutout_dimen = kwargs['cutout_dimen'] if 'cutout_dimen' in kwargs else (0,0)
+        cutout_wd = kwargs['cutout_wd'] if 'cutout_wd' in kwargs else 0.
+        padding = kwargs['padding'] if 'padding' in kwargs else 0.
+        crop = kwargs['crop'] if 'crop' in kwargs else 0.
+        crop_prob = kwargs['crop_prob'] if 'crop_prob' in kwargs else 0.
 
-    print('Transformations')
-    print(kwargs)
-    if train:
-      if h_flip > 0:  # Horizontal Flip
-          self.transforms += [A.HorizontalFlip(p=h_flip)]
-      if v_flip > 0:  # Vertical Flip
-          self.transforms += [A.VerticalFlip(p=v_flip)]
-      if g_blur > 0:  # Patch Gaussian Augmentation
-          self.transforms += [A.GaussianBlur(p=g_blur)]
-      if rot > 0:  # Rotate image
-          self.transforms += [A.Rotate(limit=rot)]
-      if cutout > 0:  # CutOut
-          self.transforms += [A.CoarseDropout(
-              p=cutout, max_holes=1, fill_value=tuple([x * 255.0 for x in mean]),
-              max_height=cutout_dimen[0], max_width=cutout_dimen[1], min_height=1, min_width=1
-          )] 
-    self.transforms += [
-      A.Normalize(mean=mean, std=std, always_apply=True),
-        # convert the data to torch.FloatTensor
-        # with values within the range [0.0 ,1.0]
-      ToTensor()
-    ]
-    self.transform = A.Compose(self.transforms)
 
-  def __call__(self, image):
+        mean = kwargs['mean'] if 'mean' in kwargs else (.5,.5,.5)
+        std = kwargs['std'] if 'std' in kwargs else (.5,.5,.5)
+
+        train = kwargs['train'] if 'train' in kwargs else True
+
+        print(padding, padding[0], padding[1])
+
+        print('Transformations')
+        print(kwargs)
+        if train:
+            if padding[0] > 0 or padding[1] > 0:
+                self.transforms += [A.PadIfNeeded(min_height = padding[0],
+                                                  min_width = padding[1],
+                                                  mask_value = tuple([x * 255.0 for x in mean]),
+                                                  always_apply=True)]
+            if crop_prob > 0:
+                self.transforms += [A.RandomCrop(height = crop[0], width=crop[1], always_apply=True)]
+            if h_flip > 0:  # Horizontal Flip
+                self.transforms += [A.HorizontalFlip(p=h_flip)]
+            if v_flip > 0:  # Vertical Flip
+                self.transforms += [A.VerticalFlip(p=v_flip)]
+            if g_blur > 0:  # Patch Gaussian Augmentation
+                self.transforms += [A.GaussianBlur(p=g_blur)]
+            if rot > 0:  # Rotate image
+                self.transforms += [A.Rotate(limit=rot)]
+            if cutout > 0:  # CutOut
+                self.transforms += [A.CoarseDropout(
+                    p=cutout, max_holes=1, fill_value=tuple([x * 255.0 for x in mean]),
+                    max_height=cutout_dimen[0], max_width=cutout_dimen[1], min_height=1, min_width=1
+                )]
+        self.transforms += [
+            A.Normalize(mean=mean, std=std, always_apply=True),
+            # convert the data to torch.FloatTensor
+            # with values within the range [0.0 ,1.0]
+            ToTensor()
+        ]
+        self.transform = A.Compose(self.transforms)
+
+    def __call__(self, image):
         """Process and image through the data transformation pipeline.
         Args:
             image: Image.
@@ -76,7 +91,7 @@ def data_loader(data, batch_size, num_workers, cuda, **kwargs):
     if cuda:
         dl_args['num_workers'] = num_workers
         dl_args['pin_memory'] = True
-    
+
     return torch.utils.data.DataLoader(data, **dl_args)
 
 
