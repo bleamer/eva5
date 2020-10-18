@@ -25,10 +25,10 @@ The results with using ResNet18 architecture with (2,2,2,2), that is, 4 residual
 
 
 ----
-
+### Accuracies
 ![](Accuracies.png)
 
-Cyclic LR amplitudes
+### Cyclic LR amplitudes
 ![](output/clr.png)
 
 The model uses:
@@ -37,14 +37,9 @@ The model uses:
 * Max Pooling
 * 4 X Residual networks of size 2 
 
+## Environment Setup
 To run 
 
 You can install dependencies using  
 `$ pip install -r req.txt`
-
-
-### Grad CAM Images
-
-
-![](output/failedimages.png)
 
