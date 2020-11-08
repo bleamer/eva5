@@ -8,3 +8,8 @@ The code is structured with Week wise progress names w1, w2 etc.
 **w2** - An implementation of DNN using `Convolution` and `MaxPooling` layers 
 
 **w3** - An implementation of DNN with backpropagation with **Pytorch** basics
+
+Lecture Videos:
+
+1. [Yolo V1](https://www.youtube.com/watch?v=u5ctn8AjdTU&)
+2. [Yolo v2,v3](https://www.youtube.com/watch?v=VfE3pqMagM0)
